@@ -1,15 +1,12 @@
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
 
 from posts.models import Post, Group, Comment
 from .serializers import PostSerializer, GroupSerializer
 from .serializers import CommentSerializer
 
-from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import permissions
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from rest_framework.permissions import IsAuthenticated
 
 
 class ReadOnly(BasePermission):
@@ -37,7 +34,7 @@ class PostViewSet(viewsets.ModelViewSet):
     Разрешения -- доступ разрешен аутифенцированному пользователю и
     запрещен неаутифенцированному.
 
-    Объектный уровень разрениений -- позволяет
+    Объектный уровень разрешений -- позволяет
     редактировать объект только автору объекта.
     """
     queryset = Post.objects.all()
@@ -55,7 +52,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     Разрешения -- доступ разрешен аутифенцированному пользователю и
     запрещен неаутифенцированному.
 
-    Объектный уровень разрениений -- позволяет
+    Объектный уровень разрешений -- позволяет
     редактировать объект только автору объекта.
     """
     queryset = Comment.objects.all()
@@ -64,27 +61,23 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            author=self.request.user, post_id=self.kwargs.get("post_id")
+            author=self.request.user, post_id=self.kwargs.get('post_id')
         )
 
     def get_queryset(self):
-        post_id = self.kwargs.get("post_id")
+        post_id = self.kwargs.get('post_id')
         new_queryset = Comment.objects.filter(post=post_id)
         return new_queryset
 
 
-@api_view(['GET'])
-def api_groups(request):
-    """View-функция возвращает объеект класса Response;
-    в этот объект в качестве аргумента передаётся
-    Python-словарь в JSON формате.
-
-    Ключевые аргументы:
-    groups -- список объектов класса Group,
-    serializer -- Python-словарь, сконвертированный в JSON
+class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    if request.method == 'POST':
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    groups = Group.objects.all()
-    serializer = GroupSerializer(groups, many=True)
-    return Response(serializer.data)
+    Простой ViewSet для просмотра групп.
+
+    Разрешения -- доступ разрешен аутифенцированному пользователю и
+    запрещен неаутифенцированному.
+
+    """
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = [IsAuthenticated]
